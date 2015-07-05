@@ -4,6 +4,7 @@ use Closure;
 use Illuminate\Container\Container;
 use October\Rain\Cron\Models\Job;
 use Illuminate\Queue\Jobs\Job as JobBase;
+use DB;
 
 class CronJob extends JobBase
 {
@@ -44,19 +45,13 @@ class CronJob extends JobBase
      */
     public function fire()
     {
-        $data = json_decode($this->data, true);
-
-        if ($delay = $this->job->delay) {
-            $this->job->setStatus(Job::STATUS_WAITING);
-            sleep($delay);
-        }
-
-        $this->job->setStatus(Job::STATUS_STARTED);
-
+        $data = json_decode($this->data, true);       
         $this->resolveAndFire($data);
-
+        
         if (!$this->deleted) {
-            $this->job->setStatus(Job::STATUS_FINISHED);
+            DB::table($this->job->table)
+                    ->where('id', $this->job->id)
+                    ->update(['status' => Job::STATUS_FINISHED, 'retries' => $this->job->retries++]);
         }
     }
 
@@ -99,7 +94,7 @@ class CronJob extends JobBase
      */
     public function attempts()
     {
-        return 1;
+        return $this->job->retries;
     }
 
     /**
@@ -109,7 +104,7 @@ class CronJob extends JobBase
      */
     public function getJobId()
     {
-        return '';
+        return $this->job->id;
     }
 
 }

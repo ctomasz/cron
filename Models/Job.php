@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 class Job extends Model
 {
     public $table = 'cron_queue';
+    protected $fillable = ['status','retries'];     
 
     const STATUS_OPEN     = 0;
     const STATUS_WAITING  = 1;
